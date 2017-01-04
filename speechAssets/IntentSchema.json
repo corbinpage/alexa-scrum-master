@@ -1,0 +1,31 @@
+{
+  "intents": [
+    {
+      "intent": "StartScrumIntent"
+    },
+    {
+      "intent": "TellMeAJokeIntent"
+    },
+    {
+      "intent": "WhosThereIntent"
+    },
+    {
+     "intent": "SetupNameWhoIntent",
+     "slots":[
+        {
+          "name": "SetupName",
+          "type": "LIST_OF_SETUP_NAMES"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    }
+  ]
+}
