@@ -28,7 +28,7 @@
 /**
  * App ID for the skill
  */
-var APP_ID = undefined; //replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
+var APP_ID = 'amzn1.echo-sdk-ams.app.[amzn1.ask.skill.da37cf73-e5c1-4cc5-88b5-90d8198287dd]'; //replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
 
 /**
  * Array containing knock knock jokes.
@@ -71,23 +71,23 @@ var JOKE_LIST = [{
 var AlexaSkill = require('./AlexaSkill');
 
 /**
- * WiseGuySkill is a child of AlexaSkill.
+ * ScrumMaster is a child of AlexaSkill.
  * To read more about inheritance in JavaScript, see the link below.
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript#Inheritance
  */
-var WiseGuySkill = function() {
+var ScrumMaster = function() {
   AlexaSkill.call(this, APP_ID);
 };
 
 // Extend AlexaSkill
-WiseGuySkill.prototype = Object.create(AlexaSkill.prototype);
-WiseGuySkill.prototype.constructor = WiseGuySkill;
+ScrumMaster.prototype = Object.create(AlexaSkill.prototype);
+ScrumMaster.prototype.constructor = ScrumMaster;
 
 /**
  * Overriden to show that a subclass can override this function to initialize session state.
  */
-WiseGuySkill.prototype.eventHandlers.onSessionStarted = function(sessionStartedRequest, session) {
+ScrumMaster.prototype.eventHandlers.onSessionStarted = function(sessionStartedRequest, session) {
   console.log("onSessionStarted requestId: " + sessionStartedRequest.requestId + ", sessionId: " + session.sessionId);
 
   // Any session init logic would go here.
@@ -96,8 +96,8 @@ WiseGuySkill.prototype.eventHandlers.onSessionStarted = function(sessionStartedR
 /**
  * If the user launches without specifying an intent, route to the correct function.
  */
-WiseGuySkill.prototype.eventHandlers.onLaunch = function(launchRequest, session, response) {
-  console.log("WiseGuySkill onLaunch requestId: " + launchRequest.requestId + ", sessionId: " + session.sessionId);
+ScrumMaster.prototype.eventHandlers.onLaunch = function(launchRequest, session, response) {
+  console.log("ScrumMaster onLaunch requestId: " + launchRequest.requestId + ", sessionId: " + session.sessionId);
 
   handleTellMeAJokeIntent(session, response);
 };
@@ -105,13 +105,17 @@ WiseGuySkill.prototype.eventHandlers.onLaunch = function(launchRequest, session,
 /**
  * Overriden to show that a subclass can override this function to teardown session state.
  */
-WiseGuySkill.prototype.eventHandlers.onSessionEnded = function(sessionEndedRequest, session) {
+ScrumMaster.prototype.eventHandlers.onSessionEnded = function(sessionEndedRequest, session) {
   console.log("onSessionEnded requestId: " + sessionEndedRequest.requestId + ", sessionId: " + session.sessionId);
 
   //Any session cleanup logic would go here.
 };
 
-WiseGuySkill.prototype.intentHandlers = {
+ScrumMaster.prototype.intentHandlers = {
+  "StartScrumIntent": function(intent, session, response) {
+    handleStartScrumIntent(session, response);
+  },
+
   "TellMeAJokeIntent": function(intent, session, response) {
     handleTellMeAJokeIntent(session, response);
   },
@@ -156,15 +160,61 @@ WiseGuySkill.prototype.intentHandlers = {
   },
 
   "AMAZON.StopIntent": function(intent, session, response) {
-    var speechOutput = "Goodbye";
+    var speechOutput = "Ok, see ya.";
     response.tell(speechOutput);
   },
 
   "AMAZON.CancelIntent": function(intent, session, response) {
-    var speechOutput = "Goodbye";
+    var speechOutput = "Ok, see ya.";
     response.tell(speechOutput);
   }
 };
+
+/**
+ * Custom Response.
+ */
+function handleStartScrumIntent(session, response) {
+  var speechText = "";
+
+  //Reprompt speech will be triggered if the user doesn't respond.
+  var repromptText = "You can ask, who's there";
+
+  //Check if session variables are already initialized.
+  if (session.attributes.stage) {
+
+    //Ensure the dialogue is on the correct stage.
+    if (session.attributes.stage === 0) {
+      //The joke is already initialized, this function has no more work.
+      speechText = "knock knock!";
+    } else {
+      //The user attempted to jump to the intent of another stage.
+      session.attributes.stage = 0;
+      speechText = "That's not how knock knock jokes work! " + "knock knock";
+    }
+  } else {
+    //Select a random joke and store it in the session variables.
+    var jokeID = Math.floor(Math.random() * JOKE_LIST.length);
+
+    //The stage variable tracks the phase of the dialogue. 
+    //When this function completes, it will be on stage 1.
+    session.attributes.stage = 1;
+    session.attributes.setup = JOKE_LIST[jokeID].setup;
+    session.attributes.speechPunchline = JOKE_LIST[jokeID].speechPunchline;
+    session.attributes.cardPunchline = JOKE_LIST[jokeID].cardPunchline;
+
+    speechText = "Knock knock!";
+  }
+
+  var speechOutput = {
+    speech: speechText,
+    type: AlexaSkill.speechOutputType.PLAIN_TEXT
+  };
+  var repromptOutput = {
+    speech: repromptText,
+    type: AlexaSkill.speechOutputType.PLAIN_TEXT
+  };
+  response.askWithCard(speechOutput, repromptOutput, "Wise Guy", speechText);
+}
 
 /**
  * Selects a joke randomly and starts it off by saying "Knock knock".
@@ -312,6 +362,6 @@ function handleSetupNameWhoIntent(session, response) {
 // Create the handler that responds to the Alexa Request.
 exports.handler = function(event, context) {
   // Create an instance of the WiseGuy Skill.
-  var skill = new WiseGuySkill();
+  var skill = new ScrumMaster();
   skill.execute(event, context);
 };
