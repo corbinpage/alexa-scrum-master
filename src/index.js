@@ -6,7 +6,7 @@
         http://aws.amazon.com/apache2.0/
 
     or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-*/
+    */
 
 /**
  * This sample shows how to create a Lambda function for handling Alexa Skill requests that:
@@ -28,7 +28,12 @@
 /**
  * App ID for the skill
  */
-var APP_ID = 'amzn1.echo-sdk-ams.app.[amzn1.ask.skill.da37cf73-e5c1-4cc5-88b5-90d8198287dd]'; //replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
+var APP_ID = 'amzn1.ask.skill.da37cf73-e5c1-4cc5-88b5-90d8198287dd'; //replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
+
+/**
+ * Array containing knock knock jokes.
+ */
+var cardTitle = 'Scrum Master';
 
 /**
  * Array containing knock knock jokes.
@@ -112,8 +117,24 @@ ScrumMaster.prototype.eventHandlers.onSessionEnded = function(sessionEndedReques
 };
 
 ScrumMaster.prototype.intentHandlers = {
+  "StartBasicScrumIntent": function(intent, session, response) {
+    handleStartBasicScrumIntent(session, response);
+  },
+
+  "EndBasicScrumIntent": function(intent, session, response) {
+    handleEndBasicScrumIntent(session, response);
+  },
+
   "StartScrumIntent": function(intent, session, response) {
     handleStartScrumIntent(session, response);
+  },
+
+  "GiveUpdateIntent": function(intent, session, response) {
+    handleGiveUpdateIntent(session, response);
+  },
+
+  "EndScrumIntent": function(intent, session, response) {
+    handleEndScrumIntent(session, response);
   },
 
   "TellMeAJokeIntent": function(intent, session, response) {
@@ -160,24 +181,65 @@ ScrumMaster.prototype.intentHandlers = {
   },
 
   "AMAZON.StopIntent": function(intent, session, response) {
-    var speechOutput = "Ok, see ya.";
+    var speechOutput = "Ok, see ya!";
     response.tell(speechOutput);
   },
 
   "AMAZON.CancelIntent": function(intent, session, response) {
-    var speechOutput = "Ok, see ya.";
+    var speechOutput = "Ok, see ya!";
     response.tell(speechOutput);
   }
 };
 
 /**
- * Custom Response.
+ * Start Scrum Response.
+ * End Scrum - took this long
+ * Next Turn
+ * --Start Timer?
+ * --Take new update (repeat)
+ * --Scrum Done
  */
+function handleStartBasicScrumIntent(session, response) {
+  var speechText = "Ready! please begin your updates.";
+  session.attributes.startTime = Date.now();
+
+  var speechOutput = {
+    speech: speechText,
+    type: AlexaSkill.speechOutputType.PLAIN_TEXT
+  };
+
+  response.tellAndWait(speechOutput);
+}
+
+function handleEndBasicScrumIntent(session, response) {
+  var speechText = "";
+  session.attributes.endTime = Date.now();
+
+  if (session.attributes.startTime) {
+
+    var diffMs = (session.attributes.endTime - session.attributes.startTime);
+    var diffMins = Math.round(((diffMs % 86400000) % 3600000) / 60000);
+    var diffMinsText = diffMins < 1 ? "less than one minute" : diffMins < 2 ? "1 minute" : diffMins + " minutes";
+
+    speechText = "Good job! Your scrum took " + diffMinsText + " today.";
+  } else {
+    speechText = "Good job!";
+  }
+
+  var speechOutput = {
+    speech: speechText,
+    type: AlexaSkill.speechOutputType.PLAIN_TEXT
+  };
+
+  response.tell(speechOutput);
+}
+
 function handleStartScrumIntent(session, response) {
   var speechText = "";
+  session.attributes.startTime = Date.now().toISOString();
 
   //Reprompt speech will be triggered if the user doesn't respond.
-  var repromptText = "You can ask, who's there";
+  var repromptText = "Ready to start?";
 
   //Check if session variables are already initialized.
   if (session.attributes.stage) {
@@ -185,24 +247,24 @@ function handleStartScrumIntent(session, response) {
     //Ensure the dialogue is on the correct stage.
     if (session.attributes.stage === 0) {
       //The joke is already initialized, this function has no more work.
-      speechText = "knock knock!";
+      speechText = "Ready! please begin your updates.";
     } else {
       //The user attempted to jump to the intent of another stage.
       session.attributes.stage = 0;
-      speechText = "That's not how knock knock jokes work! " + "knock knock";
+      speechText = "I think we got off track, please begin your updates.";
     }
   } else {
     //Select a random joke and store it in the session variables.
-    var jokeID = Math.floor(Math.random() * JOKE_LIST.length);
+    // var jokeID = Math.floor(Math.random() * JOKE_LIST.length);
 
     //The stage variable tracks the phase of the dialogue. 
     //When this function completes, it will be on stage 1.
     session.attributes.stage = 1;
-    session.attributes.setup = JOKE_LIST[jokeID].setup;
-    session.attributes.speechPunchline = JOKE_LIST[jokeID].speechPunchline;
-    session.attributes.cardPunchline = JOKE_LIST[jokeID].cardPunchline;
+    // session.attributes.setup = JOKE_LIST[jokeID].setup;
+    // session.attributes.speechPunchline = JOKE_LIST[jokeID].speechPunchline;
+    // session.attributes.cardPunchline = JOKE_LIST[jokeID].cardPunchline;
 
-    speechText = "Knock knock!";
+    speechText = "Ready! Please begin your updates by saying 'Yesterday I'.";
   }
 
   var speechOutput = {
@@ -213,7 +275,64 @@ function handleStartScrumIntent(session, response) {
     speech: repromptText,
     type: AlexaSkill.speechOutputType.PLAIN_TEXT
   };
-  response.askWithCard(speechOutput, repromptOutput, "Wise Guy", speechText);
+  response.askWithCard(speechOutput, repromptOutput, cardTitle, speechText);
+}
+
+/**
+ * Listens to the response then responds "Great, thanks"
+ */
+function handleNextTurnIntent(session, response) {
+  var speechText = "";
+  var repromptText = "";
+
+  if (session.attributes.stage) {
+    if (session.attributes.stage >= 1) {
+      //Retrieve the joke's setup text.
+      speechText = session.attributes.setup;
+
+      //Advance the stage of the dialogue.
+      session.attributes.stage = session.attributes.stage + 1;
+
+      repromptText = "Please begin your update.";
+    } else {
+      session.attributes.stage = 1;
+      speechText = "Sorry, I think we got off track. <break time=\"0.3s\" /> " + "Please begin your updates by saying 'Yesterday I'.";
+
+      repromptText = "You can ask, who's there."
+    }
+  } else {
+
+    //If the session attributes are not found, the joke must restart. 
+    speechText = "Sorry, I think we got off track. You can say, start the scrum."
+
+    repromptText = "You can say, start the scrum.";
+  }
+
+  var speechOutput = {
+    speech: '<speak>' + speechText + '</speak>',
+    type: AlexaSkill.speechOutputType.SSML
+  };
+  var repromptOutput = {
+    speech: '<speak>' + repromptText + '</speak>',
+    type: AlexaSkill.speechOutputType.SSML
+  };
+  response.ask(speechOutput, repromptOutput);
+}
+
+/**
+ * Listens to the response then responds "Great, thanks"
+ */
+function handleEndScrumIntent(session, response) {
+  var speechText = "";
+  var repromptText = "";
+
+  speechText = "Good job! Your scrum took 5 minutes today.";
+  speechOutput = {
+    speech: '<speak>' + speechText + '</speak>',
+    type: AlexaSkill.speechOutputType.SSML
+  };
+  //If the joke completes successfully, this function uses a "tell" response.
+  response.tell(speechOutput);
 }
 
 /**

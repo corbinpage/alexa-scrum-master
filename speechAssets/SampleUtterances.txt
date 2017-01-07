@@ -33,5 +33,18 @@ WhosThereIntent who's this
 
 SetupNameWhoIntent {SetupName} who
 
+StartBasicScrumIntent start basic scrum
+
+EndBasicScrumIntent end basic scrum
+
 StartScrumIntent start the scrum
 StartScrumIntent start scrum
+StartScrumIntent start
+
+GiveUpdateIntent yesterday I
+
+EndScrumIntent end scrum
+EndScrumIntent end
+EndScrumIntent done
+EndScrumIntent ok done
+EndScrumIntent thanks done
