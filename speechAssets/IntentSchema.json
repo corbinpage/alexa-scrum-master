@@ -2,6 +2,8 @@
   "intents": [{
     "intent": "StartScrumIntent"
   }, {
+    "intent": "TellScrumTimeIntent"
+  }, {
     "intent": "EndScrumIntent"
   }, {
     "intent": "AMAZON.HelpIntent"

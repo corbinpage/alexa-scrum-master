@@ -1,11 +1,21 @@
+StartScrumIntent start the scrum meeting
 StartScrumIntent start the scrum
 StartScrumIntent start scrum
+StartScrumIntent start scrum meeting
+StartScrumIntent start meeting
 StartScrumIntent start
 
+TellScrumTimeIntent for the time
+TellScrumTimeIntent how long we've been meeting
+TellScrumTimeIntent how long the scrum has been
+TellScrumTimeIntent how long the scrum has gone
+TellScrumTimeIntent the length of this meeting
+TellScrumTimeIntent what our meeting time is
+
+EndScrumIntent end scrum meeting
 EndScrumIntent end scrum
 EndScrumIntent end
-EndScrumIntent stop
+EndScrumIntent stop scrum meeting
 EndScrumIntent stop scrum
+EndScrumIntent stop
 EndScrumIntent done
-EndScrumIntent ok done
-EndScrumIntent thanks done
