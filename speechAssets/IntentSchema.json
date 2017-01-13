@@ -6,6 +6,10 @@
   }, {
     "intent": "EndScrumIntent"
   }, {
+    "intent": "YesIntent"
+  }, {
+    "intent": "NoIntent"
+  }, {
     "intent": "AMAZON.HelpIntent"
   }, {
     "intent": "AMAZON.StopIntent"

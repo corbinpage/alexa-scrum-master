@@ -1,14 +1,10 @@
-/**
- * App ID for the skill
- */
-var APP_ID = 'amzn1.ask.skill.da37cf73-e5c1-4cc5-88b5-90d8198287dd';
+var AlexaSkill = require('./AlexaSkill');
+// var storage = require('./storage');
+// var textHelper = require('./textHelper');
 
+var APP_ID = 'amzn1.ask.skill.da37cf73-e5c1-4cc5-88b5-90d8198287dd';
 var cardTitle = 'Scrum Master';
 
-/**
- * The AlexaSkill prototype and helper functions
- */
-var AlexaSkill = require('./AlexaSkill');
 
 /**
  * ScrumMaster is a child of AlexaSkill.
@@ -22,9 +18,7 @@ var ScrumMaster = function() {
 ScrumMaster.prototype = Object.create(AlexaSkill.prototype);
 ScrumMaster.prototype.constructor = ScrumMaster;
 
-/**
- * Overriden to show that a subclass can override this function to initialize session state.
- */
+
 ScrumMaster.prototype.eventHandlers.onSessionStarted = function(sessionStartedRequest, session) {
   console.log("onSessionStarted requestId: " + sessionStartedRequest.requestId + ", sessionId: " + session.sessionId);
 
@@ -37,16 +31,13 @@ ScrumMaster.prototype.eventHandlers.onSessionStarted = function(sessionStartedRe
 ScrumMaster.prototype.eventHandlers.onLaunch = function(launchRequest, session, response) {
   console.log("ScrumMaster onLaunch requestId: " + launchRequest.requestId + ", sessionId: " + session.sessionId);
 
-  handleStartScrumIntent(session, response);
+  handleOnLaunch(session, response);
 };
 
-/**
- * Overriden to show that a subclass can override this function to teardown session state.
- */
 ScrumMaster.prototype.eventHandlers.onSessionEnded = function(sessionEndedRequest, session) {
   console.log("onSessionEnded requestId: " + sessionEndedRequest.requestId + ", sessionId: " + session.sessionId);
 
-  //Any session cleanup logic would go here.
+  handleEndScrumIntent(session, response);
 };
 
 ScrumMaster.prototype.intentHandlers = {
@@ -63,33 +54,30 @@ ScrumMaster.prototype.intentHandlers = {
     handleTellScrumTimeIntent(session, response);
   },
 
-  "AMAZON.HelpIntent": function(intent, session, response) {
-    var speechText = "You can ask Scrum Master to start the scrum or end the scrum.";
+  "YesIntent": function(intent, session, response) {
+    handleStartScrumIntent(session, response);
+  },
 
-    var speechOutput = {
-      speech: speechText,
-      type: AlexaSkill.speechOutputType.PLAIN_TEXT
-    };
-    var repromptOutput = {
-      speech: speechText,
-      type: AlexaSkill.speechOutputType.PLAIN_TEXT
-    };
-    // For the repromptText, play the speechOutput again
-    response.ask(speechOutput, repromptOutput);
+  "NoIntent": function(intent, session, response) {
+    handleExit(session, response);
+  },
+
+  "AMAZON.HelpIntent": function(intent, session, response) {
+    var speechOutput = "You can ask Scrum Master to start the scrum, end the scrum, or how long the scrum has been going.";
+    response.tell(speechOutput);
   },
 
   "AMAZON.StopIntent": function(intent, session, response) {
-    var speechOutput = "Ok, see ya!";
-    response.tell(speechOutput);
+    handleExit(session, response);
   },
 
   "AMAZON.CancelIntent": function(intent, session, response) {
-    var speechOutput = "Ok, see ya!";
-    response.tell(speechOutput);
+    handleExit(session, response);
   }
 };
 
 /**
+ * Launch
  * Start Scrum Response.
 
  * ------Other Ideas------
@@ -103,6 +91,14 @@ ScrumMaster.prototype.intentHandlers = {
 
  * End Scrum - took this long
  */
+
+function handleOnLaunch(session, response) {
+  var speechText = "Thanks for stopping by, would you like to start a scrum?";
+  var repromptText = "Would you like to start a scrum?";
+
+  response.ask(speechText, repromptText);
+}
+
 function handleStartScrumIntent(session, response) {
   var speechText = "Ready! please begin your updates.";
   session.attributes.startTime = Date.now();
@@ -112,7 +108,7 @@ function handleStartScrumIntent(session, response) {
     type: AlexaSkill.speechOutputType.PLAIN_TEXT
   };
 
-  response.tellAndWait(speechOutput);
+  response.tell(speechOutput);
 }
 
 function handleTellScrumTimeIntent(session, response) {
@@ -133,7 +129,7 @@ function handleTellScrumTimeIntent(session, response) {
     type: AlexaSkill.speechOutputType.PLAIN_TEXT
   };
 
-  response.tell(speechOutput);
+  response.tellAndWait(speechOutput);
 }
 
 function handleEndScrumIntent(session, response) {
@@ -159,20 +155,14 @@ function handleEndScrumIntent(session, response) {
   response.tell(speechOutput);
 }
 
-// function handleLogActionItemIntent(session, response) {
-//   var speechText = "Done! Action Item logged.";
-
-//   var speechOutput = {
-//     speech: speechText,
-//     type: AlexaSkill.speechOutputType.PLAIN_TEXT
-//   };
-
-//   response.tell(speechOutput);
-// }
+function handleExit(session, response) {
+  var speechOutput = "Ok, see ya!";
+  response.tell(speechOutput);
+}
 
 // Create the handler that responds to the Alexa Request.
 exports.handler = function(event, context) {
-  // Create an instance of the WiseGuy Skill.
+  // Create an instance of the ScrumMaster Skill.
   var skill = new ScrumMaster();
   skill.execute(event, context);
 };

@@ -19,3 +19,14 @@ EndScrumIntent stop scrum meeting
 EndScrumIntent stop scrum
 EndScrumIntent stop
 EndScrumIntent done
+
+YesIntent yes
+YesIntent yeah
+YesIntent yup
+YesIntent sure
+YesIntent yes please
+
+NoIntent no
+NoIntent nope
+NoIntent no thanks
+NoIntent no thank you
