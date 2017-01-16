@@ -12,29 +12,15 @@ var storage = (function() {
       this.data = data;
     } else {
       this.data = {
-        players: [],
-        scores: {}
+        startTime: null,
+        endTime: null
       };
     }
     this._session = session;
   }
 
   Scrum.prototype = {
-    // isEmptyScore: function() {
-    //   //check if any one had non-zero score,
-    //   //it can be used as an indication of whether the game has just started
-    //   var allEmpty = true;
-    //   var gameData = this.data;
-    //   gameData.players.forEach(function(player) {
-    //     if (gameData.scores[player] !== 0) {
-    //       allEmpty = false;
-    //     }
-    //   });
-    //   return allEmpty;
-    // },
     save: function(callback) {
-      //save the scrum's state in the session,
-      //so next time we can save a read from dynamoDB
       this._session.attributes.currentScrum = this.data;
       dynamodb.putItem({
         TableName: 'ScrumData',
@@ -54,99 +40,53 @@ var storage = (function() {
           callback();
         }
       });
-    }
-  };
-
-
-  /*
-   * The Game class stores all game states for the user
-   */
-  function Game(session, data) {
-    if (data) {
-      this.data = data;
-    } else {
-      this.data = {
-        players: [],
-        scores: {}
-      };
-    }
-    this._session = session;
-  }
-
-  Game.prototype = {
-    isEmptyScore: function() {
-      //check if any one had non-zero score,
-      //it can be used as an indication of whether the game has just started
-      var allEmpty = true;
-      var gameData = this.data;
-      gameData.players.forEach(function(player) {
-        if (gameData.scores[player] !== 0) {
-          allEmpty = false;
-        }
-      });
-      return allEmpty;
     },
-    save: function(callback) {
-      //save the game states in the session,
-      //so next time we can save a read from dynamoDB
-      this._session.attributes.currentGame = this.data;
-      dynamodb.putItem({
-        TableName: 'ScoreKeeperUserData',
-        Item: {
-          CustomerId: {
-            S: this._session.user.userId
-          },
-          Data: {
-            S: JSON.stringify(this.data)
-          }
-        }
-      }, function(err, data) {
-        if (err) {
-          console.log(err, err.stack);
-        }
-        if (callback) {
-          callback();
-        }
-      });
+
+    diffMinsText: function() {
+      var tempStartTime = this.data.startTime ? this.data.startTime : Date.now();
+      var tempEndTime = this.data.endTime ? this.data.endTime : Date.now();
+      var diffMins = Math.round((((tempEndTime - tempStartTime) % 86400000) % 3600000) / 60000);
+
+      return diffMins < 1 ? "less than one minute" : diffMins < 2 ? "1 minute" : diffMins + " minutes";
     }
   };
 
   return {
-    loadGame: function(session, callback) {
-      if (session.attributes.currentGame) {
-        console.log('get game from session=' + session.attributes.currentGame);
-        callback(new Game(session, session.attributes.currentGame));
+    loadScrum: function(session, callback) {
+      if (session.attributes.currentScrum) {
+        console.log('get scrum from session=' + session.attributes.currentScrum);
+        callback(new Scrum(session, session.attributes.currentScrum));
         return;
       }
       dynamodb.getItem({
-        TableName: 'ScoreKeeperUserData',
+        TableName: 'ScrumData',
         Key: {
-          CustomerId: {
+          userId: {
             S: session.user.userId
           }
         }
       }, function(err, data) {
-        var currentGame;
+        var currentScrum;
         if (err) {
           console.log(err, err.stack);
-          currentGame = new Game(session);
-          session.attributes.currentGame = currentGame.data;
-          callback(currentGame);
+          currentScrum = new Scrum(session);
+          session.attributes.currentScrum = currentScrum.data;
+          callback(currentScrum);
         } else if (data.Item === undefined) {
-          currentGame = new Game(session);
-          session.attributes.currentGame = currentGame.data;
-          callback(currentGame);
+          currentScrum = new Scrum(session);
+          session.attributes.currentScrum = currentScrum.data;
+          callback(currentScrum);
         } else {
-          console.log('get game from dynamodb=' + data.Item.Data.S);
-          currentGame = new Game(session, JSON.parse(data.Item.Data.S));
-          session.attributes.currentGame = currentGame.data;
-          callback(currentGame);
+          console.log('get scrum from dynamodb=' + data.Item.Data.S);
+          currentScrum = new Scrum(session, JSON.parse(data.Item.Data.S));
+          session.attributes.currentScrum = currentScrum.data;
+          callback(currentScrum);
         }
       });
     },
-    newGame: function(session) {
-      return new Game(session);
-    }
+    newScrum: function(session) {
+      return new Scrum(session);
+    },
   };
 })();
 module.exports = storage;

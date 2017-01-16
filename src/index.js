@@ -1,6 +1,5 @@
 var AlexaSkill = require('./AlexaSkill');
-// var storage = require('./storage');
-// var textHelper = require('./textHelper');
+var storage = require('./storage');
 
 var APP_ID = 'amzn1.ask.skill.da37cf73-e5c1-4cc5-88b5-90d8198287dd';
 var cardTitle = 'Scrum Master';
@@ -100,63 +99,67 @@ function handleOnLaunch(session, response) {
 }
 
 function handleStartScrumIntent(session, response) {
-  var speechText = "Ready! please begin your updates.";
-  session.attributes.startTime = Date.now();
+  storage.loadScrum(session, function(currentScrum) {
+    currentScrum.data.startTime = Date.now();
+    currentScrum.data.endTime = null;
 
-  var speechOutput = {
-    speech: speechText,
-    type: AlexaSkill.speechOutputType.PLAIN_TEXT
-  };
-
-  response.tell(speechOutput);
+    currentScrum.save(function() {
+      var speechOutput = "Scrum started! Please begin your updates.";
+      response.tell(speechOutput);
+    });
+  });
 }
 
 function handleTellScrumTimeIntent(session, response) {
-  var speechText = "";
+  storage.loadScrum(session, function(currentScrum) {
+    var speechText = "";
+    var diffMinsText = currentScrum.diffMinsText()
 
-  if (session.attributes.startTime) {
-    var diffMs = (Date.now() - session.attributes.startTime);
-    var diffMins = Math.round(((diffMs % 86400000) % 3600000) / 60000);
-    var diffMinsText = diffMins < 1 ? "less than one minute" : diffMins < 2 ? "1 minute" : diffMins + " minutes";
+    if (currentScrum.data.startTime && currentScrum.data.endTime) {
+      speechText = "You don't have an active scrum right now, but your last scrum meeting took " + diffMinsText + ".";
+    } else if (currentScrum.data.startTime) {
+      speechText = "Your scrum has been going for " + diffMinsText + " so far.";
+    } else {
+      speechText = "You don't currently have any scrum meetings logged.";
+    }
 
-    speechText = "Your scrum has been going for " + diffMinsText + " so far.";
-  } else {
-    speechText = "You don't currently have an active Scrum.";
-  }
+    var speechOutput = {
+      speech: speechText,
+      type: AlexaSkill.speechOutputType.PLAIN_TEXT
+    };
 
-  var speechOutput = {
-    speech: speechText,
-    type: AlexaSkill.speechOutputType.PLAIN_TEXT
-  };
-
-  response.tellAndWait(speechOutput);
+    response.tell(speechOutput);
+  });
 }
 
 function handleEndScrumIntent(session, response) {
-  var speechText = "";
-  session.attributes.endTime = Date.now();
+  storage.loadScrum(session, function(currentScrum) {
+    currentScrum.data.endTime = Date.now();
+    var speechText = "";
 
-  if (session.attributes.startTime) {
+    if (currentScrum.data.startTime) {
+      var diffMs = (currentScrum.data.endTime - currentScrum.data.startTime);
+      var diffMins = Math.round(((diffMs % 86400000) % 3600000) / 60000);
+      var diffMinsText = diffMins < 1 ? "less than one minute" : diffMins < 2 ? "1 minute" : diffMins + " minutes";
 
-    var diffMs = (session.attributes.endTime - session.attributes.startTime);
-    var diffMins = Math.round(((diffMs % 86400000) % 3600000) / 60000);
-    var diffMinsText = diffMins < 1 ? "less than one minute" : diffMins < 2 ? "1 minute" : diffMins + " minutes";
+      speechText = "Good job! Your scrum took " + diffMinsText + " today.";
+    } else {
+      speechText = "Good job!";
+    }
 
-    speechText = "Good job! Your scrum took " + diffMinsText + " today.";
-  } else {
-    speechText = "Good job!";
-  }
+    currentScrum.save(function() {
+      var speechOutput = {
+        speech: speechText,
+        type: AlexaSkill.speechOutputType.PLAIN_TEXT
+      };
 
-  var speechOutput = {
-    speech: speechText,
-    type: AlexaSkill.speechOutputType.PLAIN_TEXT
-  };
-
-  response.tell(speechOutput);
+      response.tell(speechOutput);
+    });
+  });
 }
 
 function handleExit(session, response) {
-  var speechOutput = "Ok, see ya!";
+  var speechOutput = "Ok, see ya later!";
   response.tell(speechOutput);
 }
 

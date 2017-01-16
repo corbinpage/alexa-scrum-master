@@ -161,13 +161,6 @@ Response.prototype = (function() {
         shouldEndSession: true
       }));
     },
-    tellAndWait: function(speechOutput) {
-      this._context.succeed(buildSpeechletResponse({
-        session: this._session,
-        output: speechOutput,
-        shouldEndSession: false
-      }));
-    },
     tellWithCard: function(speechOutput, cardTitle, cardContent) {
       this._context.succeed(buildSpeechletResponse({
         session: this._session,
