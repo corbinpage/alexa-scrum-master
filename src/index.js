@@ -58,12 +58,15 @@ ScrumMaster.prototype.intentHandlers = {
   },
 
   "NoIntent": function(intent, session, response) {
-    handleExit(session, response);
+    var speechOutput = "Ok, maybe another time!";
+    response.tell(speechOutput);
   },
 
   "AMAZON.HelpIntent": function(intent, session, response) {
-    var speechOutput = "You can ask Scrum Master to start the scrum, end the scrum, or how long the scrum has been going.";
-    response.tell(speechOutput);
+    var speechText = "You can use Scrum Master to start a scrum and track how long the meeting takes. Would you like to start a scrum?";
+    var repromptText = "Would you like to start a scrum?";
+
+    response.ask(speechText, repromptText);
   },
 
   "AMAZON.StopIntent": function(intent, session, response) {
@@ -92,7 +95,7 @@ ScrumMaster.prototype.intentHandlers = {
  */
 
 function handleOnLaunch(session, response) {
-  var speechText = "Thanks for stopping by, would you like to start a scrum?";
+  var speechText = "Hi there, would you like to start a scrum?";
   var repromptText = "Would you like to start a scrum?";
 
   response.ask(speechText, repromptText);
